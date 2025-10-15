@@ -53,7 +53,7 @@ pipeline {
       steps {
         script {
           sh "docker rm -f ci-cd-demo || true"
-          sh "docker run -d --name ci-cd-demo -p 8080:3000 ${DOCKER_IMAGE}:${IMAGE_TAG}"
+          sh "docker run -d --name ci-cd-demo -p 9090:3000 ${DOCKER_IMAGE}:${IMAGE_TAG}"
         }
       }
     }
