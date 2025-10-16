@@ -28,12 +28,16 @@ pipeline {
           // Remove existing test container if it exists
           sh "docker rm -f ci_test_container || true"
 
-          // Run new test container with fixed port mapping
-          sh "docker run -d --name ci_test_container -p 3000:3000 ${DOCKER_IMAGE}:${IMAGE_TAG}"
+          // Run new test container (no port mapping needed)
+          sh "docker run -d --name ci_test_container ${DOCKER_IMAGE}:${IMAGE_TAG}"
           sh "sleep 3"
 
-          // Run tests
-          sh "node test.js"
+          // Get container IP and run tests
+          sh '''
+            CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ci_test_container)
+            echo "Container IP: $CONTAINER_IP"
+            HOST=$CONTAINER_IP PORT=3000 node test.js
+          '''
 
           // Remove test container after tests
           sh "docker rm -f ci_test_container || true"
