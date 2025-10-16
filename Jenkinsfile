@@ -27,14 +27,16 @@ pipeline {
         script {
           // Remove existing test container if it exists
           sh "docker rm -f ci_test_container || true"
-          
-          // Run new test container with fixed port mapping
-          sh "docker run -d --name ci_test_container -p 3000:3000 ${DOCKER_IMAGE}:${IMAGE_TAG}"
-          sh "sleep 3"
-          
-          // Run your tests
-          sh "node test.js"
-          
+
+          // Run new test container with dynamic host port allocation
+          sh '''
+            docker run -d --name ci_test_container -P ${DOCKER_IMAGE}:${IMAGE_TAG}
+            sleep 3
+            PORT=$(docker port ci_test_container 3000/tcp | cut -d: -f2)
+            echo "Mapped port: $PORT"
+            HOST=localhost PORT=$PORT node test.js
+          '''
+
           // Remove test container after tests
           sh "docker rm -f ci_test_container || true"
         }
@@ -62,7 +64,7 @@ pipeline {
         script {
           // Remove existing deployment container if exists
           sh "docker rm -f ci-cd-demo || true"
-          
+
           // Run container on host port 9090
           sh "docker run -d --name ci-cd-demo -p 9090:3000 ${DOCKER_IMAGE}:${IMAGE_TAG}"
         }
