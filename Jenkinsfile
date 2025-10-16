@@ -28,12 +28,9 @@ pipeline {
           // Remove existing test container if it exists
           sh "docker rm -f ci_test_container || true"
           
-          // Run test container with dynamic host port allocation
-          sh "docker run -d --name ci_test_container -P ${DOCKER_IMAGE}:${IMAGE_TAG}"
+          // Run new test container with fixed port mapping
+          sh "docker run -d --name ci_test_container -p 3000:3000 ${DOCKER_IMAGE}:${IMAGE_TAG}"
           sh "sleep 3"
-          
-          // Optionally print which host port was assigned
-          sh "docker port ci_test_container"
           
           // Run your tests
           sh "node test.js"
