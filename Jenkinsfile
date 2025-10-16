@@ -25,22 +25,24 @@ pipeline {
     stage('Run Tests') {
       steps {
         script {
-          // Remove existing test container if it exists
-          sh "docker rm -f ci_test_container || true"
+          try {
+            // Remove existing test container if it exists
+            sh "docker rm -f ci_test_container || true"
 
-          // Run new test container (no port mapping needed)
-          sh "docker run -d --name ci_test_container ${DOCKER_IMAGE}:${IMAGE_TAG}"
-          sh "sleep 3"
+            // Run test container (no host port mapping needed)
+            sh "docker run -d --name ci_test_container ${DOCKER_IMAGE}:${IMAGE_TAG}"
+            sh "sleep 3"
 
-          // Get container IP and run tests
-          sh '''
-            CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ci_test_container)
-            echo "Container IP: $CONTAINER_IP"
-            HOST=$CONTAINER_IP PORT=3000 node test.js
-          '''
-
-          // Remove test container after tests
-          sh "docker rm -f ci_test_container || true"
+            // Get container IP and run tests
+            sh '''
+              CONTAINER_IP=$(docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ci_test_container)
+              echo "Container IP: $CONTAINER_IP"
+              HOST=$CONTAINER_IP PORT=3000 node test.js
+            '''
+          } finally {
+            // Always remove the test container
+            sh "docker rm -f ci_test_container || true"
+          }
         }
       }
     }
